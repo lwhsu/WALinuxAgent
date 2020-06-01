@@ -441,6 +441,11 @@ class UpdateHandler(object):
             else:
                 log_if_int_changed_from_default("OS.EnableFirewallPeriod", conf.get_enable_firewall_period())
 
+            if conf.get_lib_dir() != "/var/lib/waagent":
+                message = "lib dir is in an unexpected location: {0}".format(conf.get_lib_dir())
+                logger.info(message)
+                add_event(AGENT_NAME, op=WALAEventOperation.ConfigurationChange, message=message)
+
         except Exception as e:
             logger.warn("Failed to log changes in configuration: {0}", ustr(e))
 
@@ -497,9 +502,7 @@ class UpdateHandler(object):
 
     def _ensure_cgroups_initialized(self):
         configurator = CGroupConfigurator.get_instance()
-        configurator.create_agent_cgroups(track_cgroups=True)
-        configurator.cleanup_legacy_cgroups()
-        configurator.create_extension_cgroups_root()
+        configurator.initialize()
 
     def _evaluate_agent_health(self, latest_agent):
         """
